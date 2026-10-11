@@ -10,6 +10,7 @@ Windows (C++20, SDL3, OpenGL 3.2 core, FreeType, libsmacker). GPL-3.0
   analysis databases. The user's copy lives in `CD-ROM/` (Git-ignored). At
   runtime the game copies it from a user-chosen folder into the preference
   folder (`game-data`), or uses a folder given on the command line as it is.
+  Exception: the README screenshots in `assets/screenshot-*.png`.
 - Decompiling and disassembling the original modules (`A2.EXE`, `A2MENU.DAT`,
   `A2SPEL.DAT`, `A2MOVIE.DAT`) and porting their logic is allowed; prefer
   confirming facts from the binary over guessing.
@@ -66,6 +67,10 @@ on macOS, beside the copied game files (`game-data/`) and the start window's
 - `src/main.cpp`: the separate asset browser.
 - `tools/`: `make_icons.py` and the Ghidra scripts (`tools/ghidra/`).
 - `.github/workflows/build.yml`: CI, builds and tests on macOS.
+- `.github/workflows/release.yml`: on a push to main whose newest
+  `CHANGELOG.md` version (`## vX.Y.Z`) has no tag yet, builds the macOS DMG
+  and the Windows x86/ARM64 exes and publishes a GitHub release with that
+  version's changelog section. The version must match `CMakeLists.txt`.
 
 ## Rendering
 

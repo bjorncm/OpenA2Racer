@@ -394,8 +394,10 @@ void MenuProgram::loadOptions()
     if (!fileExists(path)) {
         options_ = GameOptions{};
         // Deviation: only the 3D Accelerator mode is offered (the original
-        // defaults to 320 x 200).
+        // defaults to 320 x 200), and the dashboard is on (the original
+        // defaults to off).
         options_.displayMode = 0;
+        options_.dashboard = 1;
         saveOptions();
         return;
     }

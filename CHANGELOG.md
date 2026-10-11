@@ -20,7 +20,6 @@ This list only names what differs from the original game. Everything not listed 
 - Closing the window leaves the screen you are on the way its Cancel or Exit button would, also on screens where the original ignored it.
 - New command-line options: --no-intro skips the intro movie, --no-dialog skips the start window, and --capture <file.bmp> [seconds] saves a screenshot and exits.
 - Development options: --race <stage> starts a race stage straight away (with --race-state <n> putting it into a given race state once racing starts), --race-view <stage> [--race-piece <n>] opens a stage with a free camera, the environment variable OPENA2_RACE_AUTOPILOT=<speed> drives straight ahead at that speed, and OPENA2_FAKE_RACE skips the race with a random finished result.
-- An asset tester tool displays sprites and 3D models and plays sound clips from the original files. It also has an experimental driving sandbox on a simple test road.
 
 ### Graphics
 
@@ -48,7 +47,4 @@ This list only names what differs from the original game. Everything not listed 
 - Civilian traffic: one branch of the original's lane-change logic (a civilian in the overtaking lane, at medium distance behind a car that is not slower than it wants to drive, with the lane beside it free behind and taken ahead) reads the speed and position of a car record that does not exist (the entry before the start of the car table, a bug in the original). OpenA2Racer uses the car ahead in that lane instead, so the civilian follows it or moves back next to it.
 - Finishing places: the original recorded a car's place at the moment it crossed the line, while the player's car stood still on the line, so cars passing the player could share a place and the stage result showed the wrong names. OpenA2Racer places the cars in the order they crossed the line, then the rest by how far they got. After the finish the HUD and the numbers over the cars keep these places; in the original they kept changing as cars passed the stopped player, ending at 6/6.
 - Out-of-range values that made the original read past its tables or stop with a fatal error are clamped instead: the stage number on the route map, and the distance of a car's engine sound at exactly 500 units.
-
-### Not yet available
-
-- The race's low-resolution display mode: the race always uses the 640x480 layout, and the Opties screen only offers 3D Accelerator (clicking 320 x 200 or 640 x 480 shows a message that they are not available).
+- A new installation starts in 3D Accelerator mode with the dashboard on; the original started in 320 x 200, which has no dashboard. It can still be switched off in Options.

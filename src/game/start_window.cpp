@@ -249,7 +249,20 @@ std::vector<std::uint32_t> codepoints(std::string_view text)
     return out;
 }
 
-// Solid rectangles and FreeType text in window points, drawn at the
+// Window coordinates per dialog unit. macOS window coordinates already are
+// points; on Windows they are pixels, so the dialogs follow the display's
+// scale setting (1.5 at 150%).
+float uiScale(SDL_Window* window)
+{
+    const float density = SDL_GetWindowPixelDensity(window);
+    const float scale = SDL_GetWindowDisplayScale(window);
+    if (density <= 0.0F || scale <= 0.0F) {
+        return 1.0F;
+    }
+    return std::max(scale / density, 1.0F);
+}
+
+// Solid rectangles and FreeType text in dialog units, drawn at the
 // window's pixel resolution.
 class Painter {
 public:
@@ -340,8 +353,9 @@ public:
         int height = 0;
         SDL_GetWindowSize(window, &width, &height);
         SDL_GetWindowSizeInPixels(window, &pixelWidth_, &pixelHeight_);
-        width_ = static_cast<float>(std::max(width, 1));
-        height_ = static_cast<float>(std::max(height, 1));
+        const float scale = uiScale(window);
+        width_ = static_cast<float>(std::max(width, 1)) / scale;
+        height_ = static_cast<float>(std::max(height, 1)) / scale;
         const float density = static_cast<float>(std::max(pixelWidth_, 1)) / width_;
         if (density != density_) {
             clearCache();
@@ -619,7 +633,8 @@ void drawGroup(Painter& painter, const Rect& r, std::string_view title)
 }
 
 // Runs frames until `step` returns false: polls the events (passing them
-// on), draws, swaps. Returns false when the window was closed.
+// on with mouse positions in dialog units), draws, swaps. Returns false when
+// the window was closed.
 bool frames(SDL_Window* window, Painter& painter, const std::function<bool(const SDL_Event*)>& step)
 {
     while (true) {
@@ -627,6 +642,14 @@ bool frames(SDL_Window* window, Painter& painter, const std::function<bool(const
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_EVENT_QUIT || event.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED) {
                 return false;
+            }
+            const float scale = uiScale(window);
+            if (event.type == SDL_EVENT_MOUSE_MOTION) {
+                event.motion.x /= scale;
+                event.motion.y /= scale;
+            } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN || event.type == SDL_EVENT_MOUSE_BUTTON_UP) {
+                event.button.x /= scale;
+                event.button.y /= scale;
             }
             if (!step(&event)) {
                 return true;
@@ -643,7 +666,8 @@ bool frames(SDL_Window* window, Painter& painter, const std::function<bool(const
     }
 }
 
-void setDialogSize(SDL_Window* window, int width, int height)
+// Sets the window size in window coordinates.
+void setWindowSize(SDL_Window* window, int width, int height)
 {
     SDL_SetWindowFullscreen(window, false);
     SDL_SetWindowResizable(window, false);
@@ -652,6 +676,13 @@ void setDialogSize(SDL_Window* window, int width, int height)
     SDL_SyncWindow(window);
     SDL_ShowWindow(window);
     SDL_RaiseWindow(window);
+}
+
+// Sets the window size in dialog units.
+void setDialogSize(SDL_Window* window, int width, int height)
+{
+    const float scale = uiScale(window);
+    setWindowSize(window, static_cast<int>(std::lround(width * scale)), static_cast<int>(std::lround(height * scale)));
 }
 
 // ---------------------------------------------------------------- folder picker
@@ -809,7 +840,7 @@ bool installGame(SDL_Window* window, Painter& painter, const fs::path& source, c
 
     SDL_SetWindowTitle(window, savedTitle.c_str());
     if (oldWidth > 0 && oldHeight > 0) {
-        setDialogSize(window, oldWidth, oldHeight);
+        setWindowSize(window, oldWidth, oldHeight);
     }
     if (!succeeded && !installer.cancelled() && !installer.error().empty()) {
         message(window, SDL_MESSAGEBOX_ERROR, fillIn(installFailedFormat, installer.error()), okText, false);
@@ -1166,7 +1197,7 @@ private:
             int width = 0;
             int height = 0;
             SDL_GetWindowSize(window_, &width, &height);
-            SDL_SetWindowSize(window_, width, static_cast<int>(std::ceil(height_)));
+            SDL_SetWindowSize(window_, width, static_cast<int>(std::ceil(height_ * uiScale(window_))));
             break;
         }
         case fps:

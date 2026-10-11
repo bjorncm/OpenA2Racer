@@ -3,7 +3,7 @@
 [![Build](https://github.com/bjorncm/OpenA2Racer/actions/workflows/build.yml/badge.svg)](https://github.com/bjorncm/OpenA2Racer/actions/workflows/build.yml)
 
 OpenA2Racer is an open-source reimplementation of **A2 Racer**, the Dutch
-racing game Davilex released in 1997, for modern macOS and Windows.
+racing game Davilex released in 1997, for macOS and Windows.
 
 It is a complete port of the original game. That covers the launcher and its
 movies, the menu (players, options, controls, scores and the post-race
@@ -15,6 +15,28 @@ behave as it did in 1997.
 
 You need the original A2 Racer CD-ROM (or a copy of its files) to play. No
 game data is included.
+
+## Screenshots
+
+| Stage 6 | Stage 2 |
+|---|---|
+| ![Racing on stage 6](assets/screenshot-race-stage6.png) | ![Racing on stage 2](assets/screenshot-race-stage2.png) |
+| **Player screen** | |
+| ![The player screen](assets/screenshot-menu.png) | |
+
+The screenshots show art from the original A2 Racer by Davilex. The game data
+itself is not included.
+
+## System requirements
+
+- **macOS:** macOS 26 or later on a Mac with Apple Silicon.
+- **Windows:** Windows 10 or later, on x86 (32-bit or 64-bit) or ARM64.
+- **Graphics:** OpenGL 3.2. On Windows on ARM, if the graphics driver has
+  no OpenGL of its own, install the OpenCL and OpenGL Compatibility Pack.
+- **Disk space:** about 10 MB for the program and 54 MB for the game files
+  it copies on the first start.
+- **Game files:** the original A2 Racer CD-ROM, or a copy of its files.
+- **Controls:** keyboard; gamepads and steering wheels should also work but are untested for now.
 
 ## Technology
 

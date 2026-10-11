@@ -1,0 +1,134 @@
+name: Release
+
+# On every push to main: when the newest version in CHANGELOG.md (the first
+# "## vX.Y.Z" heading) has no tag yet, build the macOS and Windows games and
+# publish a GitHub release with that version's changelog section.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  LLVM_MINGW_VERSION: "20260922"
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.check.outputs.version }}
+      new: ${{ steps.check.outputs.new }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find the newest changelog version
+        id: check
+        run: |
+          version=$(sed -nE 's/^## v([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' CHANGELOG.md | head -n1)
+          if [ -z "$version" ]; then
+            echo "No '## vX.Y.Z' heading in CHANGELOG.md" >&2
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" >/dev/null; then
+            echo "v$version is already tagged; nothing to release."
+            echo "new=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          cmake_version=$(sed -nE 's/^project\(OpenA2Racer VERSION ([0-9.]+).*/\1/p' CMakeLists.txt)
+          if [ "$cmake_version" != "$version" ]; then
+            echo "CHANGELOG.md has v$version but CMakeLists.txt has $cmake_version" >&2
+            exit 1
+          fi
+          echo "new=true" >> "$GITHUB_OUTPUT"
+
+  macos:
+    needs: version
+    if: needs.version.outputs.new == 'true'
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: brew install sdl3 freetype
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+      - name: Make the app and disk image
+        run: |
+          cmake --install build --prefix dist/macos
+          mv dist/macos/OpenA2Racer.dmg "OpenA2Racer-${{ needs.version.outputs.version }}-macOS.dmg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos
+          path: OpenA2Racer-*-macOS.dmg
+          if-no-files-found: error
+
+  windows:
+    needs: version
+    if: needs.version.outputs.new == 'true'
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [x86, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install llvm-mingw
+        run: |
+          name="llvm-mingw-${LLVM_MINGW_VERSION}-ucrt-macos-universal"
+          curl -fsSL -o llvm-mingw.tar.xz \
+            "https://github.com/mstorsjo/llvm-mingw/releases/download/${LLVM_MINGW_VERSION}/${name}.tar.xz"
+          mkdir -p "$RUNNER_TEMP/llvm-mingw"
+          tar -xf llvm-mingw.tar.xz -C "$RUNNER_TEMP/llvm-mingw" --strip-components=1
+          rm llvm-mingw.tar.xz
+          echo "LLVM_MINGW_ROOT=$RUNNER_TEMP/llvm-mingw" >> "$GITHUB_ENV"
+      - name: Configure
+        run: |
+          cmake -S . -B build --toolchain cmake/toolchains/windows-${{ matrix.arch }}.cmake \
+                -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=OFF
+      - name: Build
+        run: cmake --build build --parallel
+      - name: Install
+        run: |
+          cmake --install build --prefix dist
+          mv dist/OpenA2Racer.exe "OpenA2Racer-${{ needs.version.outputs.version }}-windows-${{ matrix.arch }}.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}
+          path: OpenA2Racer-*-windows-${{ matrix.arch }}.exe
+          if-no-files-found: error
+
+  release:
+    needs: [version, macos, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          merge-multiple: true
+      - name: Extract the release notes
+        run: |
+          awk -v heading="## v${{ needs.version.outputs.version }}" '
+            $0 == heading || index($0, heading " ") == 1 { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > notes.md
+          cat notes.md
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="v${{ needs.version.outputs.version }}"
+          gh release create "$version" assets/* \
+            --target "$GITHUB_SHA" \
+            --title "OpenA2Racer $version" \
+            --notes-file notes.md
