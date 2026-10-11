@@ -1,0 +1,8 @@
+/build*/
+/dist/
+/cmake-build-*/
+/CD-ROM/
+# Local reverse-engineering notes; not published.
+/docs/
+.DS_Store
+._*
