@@ -2,6 +2,16 @@
 
 OpenA2Racer, an open-source version of the original A2 Racer game from 1997.
 
+## v1.1.0 (2026-10-12)
+
+### Enhancements
+- The default name "Speler" in the new-player box starts selected: typing replaces it, Backspace or Delete clears it, and the arrow keys, Home, End or a click keep it for editing. Enter still accepts it as it is.
+- The warning that appears when you try to enable software rendering instead of the 3D accelerator is now clearer. 3D acclerator is required for OpenGL.
+- Finishing the last stage no longer deletes your player: after the final hiscore the career starts again at the first stage with the money you won, and you return to the main menu. The hiscores stay as before. The maximum amount of money a player can hold is capped at 9999.
+
+### Bugfixes
+- MacOS: The start-up dialog looked stretched when transitioning to fullscreen.
+
 ## v1.0.0 (2026-10-11)
 
 This list only names what differs from the original game. Everything not listed here is meant to behave as in the original.
