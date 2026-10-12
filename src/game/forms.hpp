@@ -141,6 +141,7 @@ private:
     // Edit box state (only one edit box exists in the menu).
     std::string editText_;
     std::size_t caret_ = 0;
+    bool editSelected_ = false;      // whole default text selected, typing replaces it
     std::uint64_t caretEpoch_ = 0;   // caret blink phase start
 };
 

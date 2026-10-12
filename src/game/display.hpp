@@ -126,6 +126,7 @@ public:
         std::size_t caret = 0;
         bool focused = false;
         bool caretVisible = false;
+        bool selected = false;
     };
     EditBox editBox;
 

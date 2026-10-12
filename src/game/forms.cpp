@@ -103,8 +103,11 @@ void Forms::activate(FormDef& form)
             break;
         case ControlType::edit:
             // create_edit_box (0x4180c2): WM_SETTEXT leaves the caret at 0.
+            // Unlike the original, the default text starts selected so that
+            // typing replaces it.
             editText_ = def.text;
             caret_ = 0;
+            editSelected_ = !editText_.empty();
             break;
         }
         setState(i, value);
@@ -194,6 +197,7 @@ int Forms::handle()
                         }
                     }
                     caret_ = best;
+                    editSelected_ = false;
                     caretEpoch_ = runtime_.now();
                 }
             }
@@ -446,6 +450,32 @@ void Forms::handleKeyDown(const InputEvent& event)
 void Forms::handleEditKey(int index, const InputEvent& event)
 {
     (void)index;
+    if (editSelected_) {
+        // Like a selection: arrows collapse it to one end, Del and
+        // Backspace remove the whole text.
+        switch (event.vk) {
+        case vk::left:
+        case vk::up:
+        case vk::home:
+            caret_ = 0;
+            break;
+        case vk::right:
+        case vk::down:
+        case vk::end:
+            caret_ = editText_.size();
+            break;
+        case vk::del:
+        case vk::backspace:
+            editText_.clear();
+            caret_ = 0;
+            break;
+        default:
+            return;
+        }
+        editSelected_ = false;
+        caretEpoch_ = runtime_.now();
+        return;
+    }
     switch (event.vk) {
     case vk::left:
     case vk::up:   // single-line EDIT treats Up like Left
@@ -488,6 +518,11 @@ void Forms::handleText(const InputEvent& event)
     const int room = controlSize(runtime_.display, def).width - 2 * editMargin;
     for (const char c : event.text) {
         if (c == '\0' || allowedEditKeys.find(c) == std::string_view::npos) continue;
+        if (editSelected_) {
+            editText_.clear();
+            caret_ = 0;
+            editSelected_ = false;
+        }
         std::string next = editText_;
         next.insert(caret_, 1, c);
         if (runtime_.display.textWidth(editFont, next) > room) continue;
@@ -514,7 +549,8 @@ void Forms::updateEditOverlay()
         box.text = editText_;
         box.caret = std::min(caret_, editText_.size());
         box.focused = focus_ == i;
-        box.caretVisible = ((runtime_.now() - caretEpoch_) / caretBlink) % 2 == 0;
+        box.selected = editSelected_;
+        box.caretVisible = !editSelected_ && ((runtime_.now() - caretEpoch_) / caretBlink) % 2 == 0;
         return;
     }
 }

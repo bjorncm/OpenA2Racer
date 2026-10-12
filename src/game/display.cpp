@@ -776,6 +776,15 @@ void Display::drawEditBox()
     op.x = box.x + margin;
     op.y = box.y;
     op.text = box.text;
+    if (box.selected && box.focused && !op.text.empty()) {
+        // Selected text: inverted colours.
+        drawSolid({255, 255, 255},
+                  transform_.toTarget(static_cast<float>(op.x), static_cast<float>(box.y),
+                                      static_cast<float>(textWidth(box.font, op.text)),
+                                      static_cast<float>(textHeight(box.font))),
+                  0, 0);
+        op.color = {255, 0, 0};
+    }
     if (!op.text.empty()) {
         drawText(op);
     }
