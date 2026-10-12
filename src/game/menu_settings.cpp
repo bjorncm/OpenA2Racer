@@ -752,7 +752,7 @@ Task<> MenuProgram::menuOpties()
             // always uses the 3D Accelerator mode. A warning says so, then
             // the Opties form comes back (the requester replaced it).
             if (mode != 0) {
-                co_await reqWarning("Deze weergave is niet beschikbaar in OpenA2Racer. Het spel gebruikt altijd "
+                co_await reqWarning("Software rendering is niet beschikbaar. OpenA2Racer vereist een"
                                     "3D Accelerator.");
                 moCreateForm();
                 break;
