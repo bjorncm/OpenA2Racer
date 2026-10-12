@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.24)
 # app). Must be set before project().
 set(CMAKE_OSX_DEPLOYMENT_TARGET "11.0" CACHE STRING "Minimum macOS version")
 
-project(OpenA2Racer VERSION 1.0.0 LANGUAGES C CXX)
+project(OpenA2Racer VERSION 1.1.0 LANGUAGES C CXX)
 
 # Windows builds made with a cross-compiler (cmake/toolchains/) build SDL3
 # and FreeType from their release sources and link everything statically,

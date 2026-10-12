@@ -1447,8 +1447,24 @@ bool runStartWindow(SDL_Window* window, LauncherSettings& settings, const StartP
     return start.run();
 }
 
+// Shows a black frame, so the start window's last frame is not stretched
+// over the screen while the window changes size or until the game draws.
+static void presentBlack(SDL_Window* window)
+{
+    int pixelWidth = 0;
+    int pixelHeight = 0;
+    SDL_GetWindowSizeInPixels(window, &pixelWidth, &pixelHeight);
+    glViewport(0, 0, pixelWidth, pixelHeight);
+    glDisable(GL_SCISSOR_TEST);
+    glClearColor(0.0F, 0.0F, 0.0F, 1.0F);
+    glClear(GL_COLOR_BUFFER_BIT);
+    SDL_GL_SwapWindow(window);
+}
+
 void applyWindowSettings(SDL_Window* window, const LauncherSettings& settings)
 {
+    presentBlack(window);
+
     const auto choices = windowResolutions();
     const auto& choice =
         choices[static_cast<std::size_t>(std::clamp(settings.resolution, 0, static_cast<int>(choices.size()) - 1))];
@@ -1469,6 +1485,7 @@ void applyWindowSettings(SDL_Window* window, const LauncherSettings& settings)
     SDL_SetWindowFullscreen(window, settings.fullscreen);
     SDL_ShowWindow(window);
     SDL_SyncWindow(window);
+    presentBlack(window);
 }
 
 } // namespace opena2::game
