@@ -2,11 +2,12 @@
 """Makes the app icons, OpenA2Racer.icns (macOS) and OpenA2Racer.ico
 (Windows), from the square icon PNG.
 
-The source (assets/OpenA2Racer_icon.png) is a rounded square that fills the
-whole image, with white outside its corners. The icons are transparent there.
-This cuts the corners away along the same curve; for macOS it also leaves the
-margin of its icon grid (the body is 824 of 1024 pixels). sips and iconutil
-write the sizes.
+The source (assets/OpenA2Racer_icon.png) fills the whole image. If it is a
+rounded square with white outside its corners, the icons are transparent
+there: this cuts the corners away along the same curve. For macOS it also
+leaves the margin of its icon grid (the body is 824 of 1024 pixels) and rounds
+the corners at least as much as the grid's (a radius of about 185); for
+Windows, less (32 of 256). sips and iconutil write the sizes.
 
 Usage: tools/make_icons.py assets/OpenA2Racer_icon.png assets
 Needs only Python 3 and macOS's sips and iconutil.
@@ -80,12 +81,14 @@ def corner_radius(width, channels, rows):
     return 0
 
 
-def render(width, height, channels, rows, radius, canvas, body):
-    """The icon on a transparent `canvas`-pixel square, its body `body` wide."""
+def render(width, height, channels, rows, radius, canvas, body, minimum=0.0):
+    """The icon on a transparent `canvas`-pixel square, its body `body` wide,
+    its corner radius at least `minimum` body pixels."""
     margin = (canvas - body) / 2
     scale = width / body
-    # The corner curve, a little inside the source's so no white shows.
-    r = radius / scale - 1.0
+    # The corner curve, a little inside the source's so no white shows; a
+    # square source (radius 0) keeps its square corners.
+    r = max(radius / scale - 1.0, minimum)
     pixels = bytearray(canvas * canvas * 4)
     samples = 4
     for y in range(canvas):
@@ -138,7 +141,7 @@ def main():
     with tempfile.TemporaryDirectory() as work:
         # macOS: the 1024 grid with its margin, every size in an .icns.
         master = os.path.join(work, "macos.png")
-        write_png(master, 1024, render(width, height, channels, rows, radius, 1024, 824))
+        write_png(master, 1024, render(width, height, channels, rows, radius, 1024, 824, 185.4))
         iconset = os.path.join(work, "icon.iconset")
         os.mkdir(iconset)
         for size in (16, 32, 128, 256, 512):
@@ -147,9 +150,9 @@ def main():
         icns = os.path.join(folder, "OpenA2Racer.icns")
         subprocess.run(["iconutil", "-c", "icns", iconset, "-o", icns], check=True)
 
-        # Windows: the body fills the square.
+        # Windows: the body fills the square, its corners rounded less.
         master = os.path.join(work, "windows.png")
-        write_png(master, 256, render(width, height, channels, rows, radius, 256, 256))
+        write_png(master, 256, render(width, height, channels, rows, radius, 256, 256, 32.0))
         images = []
         for size in (16, 24, 32, 48, 64, 128, 256):
             out = os.path.join(work, f"windows-{size}.png")
