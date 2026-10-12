@@ -5,6 +5,7 @@
 #include "anims.hpp"
 #include "keys.hpp"
 #include "menu_program.hpp"
+#include "opena2/race/race_state.hpp"
 
 #include <algorithm>
 #include <array>
@@ -394,8 +395,8 @@ Task<> MenuProgram::menuDisplayClasse()
 
 // handle_game (0x40b288): stores the race results from INFIO.INI in the
 // active slot and shows the post-race screens. Returns false after the last
-// stage (the career is deleted and the start screen follows), true
-// otherwise (main menu).
+// stage (the original deletes the career and shows the start screen),
+// true otherwise (main menu).
 Task<bool> MenuProgram::handleGame()
 {
     activeSlot_ = static_cast<std::size_t>(
@@ -410,7 +411,10 @@ Task<bool> MenuProgram::handleGame()
     if (stage < 0 || stage >= stageCount) co_return true;
     const auto s = static_cast<std::size_t>(stage);
     ++slot.stage;
-    slot.money = infio_.money;
+    // Capped at what the race's four-digit money display shows; the race
+    // also replaces a larger amount with 1000 at the start. Not in the
+    // original.
+    slot.money = std::clamp(infio_.money, 0, race::maxMoney);
     slot.playerTime[s] = infio_.time;
     slot.playerPosition[s] = infio_.position;
     for (std::size_t k = 0; k < computerRacerCount; ++k) {
@@ -432,8 +436,9 @@ Task<bool> MenuProgram::handleGame()
 
     if (slot.stage < stageCount) co_return true;
 
-    // Last stage: fade to black, offer the overall hiscore, delete the
-    // finished career.
+    // Last stage: fade to black, offer the overall hiscore. The original
+    // deletes the finished career here; this version starts it again at the
+    // first stage with the money won, and returns to the main menu.
     runtime_.display.clear(Surface::buffer, 0);
     co_await wipe();
     runtime_.display.clear(Surface::back, 0);
@@ -441,9 +446,8 @@ Task<bool> MenuProgram::handleGame()
     if (place >= 0 && place < static_cast<int>(ScoreDatabase::entriesPerList)) {
         co_await menuDisplayScore(-1);
     }
-    slots_.clear(activeSlot_);
-    activeSlot_ = slots_.lastSaved();
-    co_return false;
+    slots_.restartCareer(activeSlot_);
+    co_return true;
 }
 
 } // namespace opena2::game

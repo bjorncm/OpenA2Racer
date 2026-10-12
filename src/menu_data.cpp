@@ -241,6 +241,13 @@ void SlotDatabase::reset(std::size_t index, const GameOptions& options,
     slot.resetResults();
 }
 
+void SlotDatabase::restartCareer(std::size_t index)
+{
+    auto& slot = slots_.at(index);
+    slot.stage = 0;
+    slot.resetResults();
+}
+
 // get_last_saved_slot (0x402b9f).
 std::size_t SlotDatabase::lastSaved() const noexcept
 {

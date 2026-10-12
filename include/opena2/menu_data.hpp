@@ -104,6 +104,9 @@ public:
                 const ControlSettings& controls);
     void clear(std::size_t index);
     void reset(std::size_t index, const GameOptions& options, const ControlSettings& controls);
+    // Starts a finished career again from the first stage; money, options,
+    // controls and save order stay. Not in the original.
+    void restartCareer(std::size_t index);
     std::size_t lastSaved() const noexcept;
 
     // Texts as the player lists show them.

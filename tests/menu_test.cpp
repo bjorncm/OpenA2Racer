@@ -172,6 +172,16 @@ bool testSlotDatabase()
                   "reset_slot restarts the player and clears its save order.");
     ok &= require(slots.lastSaved() == 5, "A reset slot is no longer the last saved.");
 
+    auto finished = slots;
+    finished[5].stage = 6;
+    finished[5].money = 9876;
+    finished[5].playerTime[5] = 88;
+    finished.restartCareer(5);
+    ok &= require(finished[5].used && finished[5].saveOrder == 1 && finished[5].stage == 0 &&
+                  finished[5].money == 9876 && finished[5].playerTime[5] == 0 &&
+                  finished[5].name == "Bert",
+                  "Restarting a finished career keeps the money and save order.");
+
     slots[5].padding = 0x1234;
     slots[5].money = 123456;
     slots[5].playerPosition[1] = 3;
